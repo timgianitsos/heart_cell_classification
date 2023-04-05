@@ -1,0 +1,21 @@
+name: heart
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - scipy
+  - matplotlib
+  - tqdm
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=11.8
+  - tensorboardx
+  - tensorboard
+  - pip
+  - pip:
+    - torch-summary
+    - torchnet
