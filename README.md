@@ -1,2 +1,2 @@
-- Model architecture from [here](https://github.com/antonior92/ecg-age-prediction)
+- Model architecture from [here](https://github.com/antonior92/ecg-age-prediction).
 - Model weights and constructor arguments from [here](https://www.dropbox.com/s/thvqwaryeo8uemo/model.zip?dl=0).

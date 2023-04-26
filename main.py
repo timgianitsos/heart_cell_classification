@@ -41,17 +41,21 @@ def get_data():
     data_dir = Path('data')
     dwl = np.load(data_dir / 'data-with-labels.npz')
 
-    preproc_filename = data_dir / 'preprocessed_fluorescence_intensities.npy'
+    preproc_filename = data_dir / 'preprocessed_fluorescence_intensities.npz'
     if preproc_filename.exists():
-        fl = np.load(preprocessed_filename)
+        print(f'Loading preprocessed data from "{preproc_filename}"... ', end='')
+        fl = np.load(preproc_filename)['fluorescence_intensities']
+        print(f'Done!')
     else:
+        print(f'Preprocessing dataset... ', end='')
         fl = dwl['fluorescence_intensities']
         fl = preprocess(fl)
-        # The model was trained on 12 leads, so we create a lead dimension
-        # and merely duplicate the single signal across it 12 times so that the
-        # input is compatible with the model
-        fl = fl[:, None, :] + np.zeros((12, fl.shape[-1]))
-        np.save(preproc_filename, fl, allow_pickle=False)
+        np.savez_compressed(
+            preproc_filename,
+            fluorescence_intensities=fl,
+            allow_pickle=False
+        )
+        print(f'Done! Saved to "{preproc_filename}"')
 
     return torch.from_numpy(fl), torch.from_numpy(dwl['labels'])
 
