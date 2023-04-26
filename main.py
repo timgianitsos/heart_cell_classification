@@ -30,15 +30,27 @@ def get_model():
     return model
 
 def get_data():
+    '''
+    The cell fluorescense data is a timeseries. The model was trained on a
+    somewhat similar timeseries (EKG) but at different Hz and with each input
+    consisting of 12 time series (one for each lead).
+
+    We attain the cell data, perform some signal preprocessing, and format it
+    to be ingestible by the model.
+    '''
     data_dir = Path('data')
     dwl = np.load(data_dir / 'data-with-labels.npz')
-    fl = dwl['fluorescence_intensities']
 
     preproc_filename = data_dir / 'preprocessed_fluorescence_intensities.npy'
     if preproc_filename.exists():
         fl = np.load(preprocessed_filename)
     else:
+        fl = dwl['fluorescence_intensities']
         fl = preprocess(fl)
+        # The model was trained on 12 leads, so we create a lead dimension
+        # and merely duplicate the single signal across it 12 times so that the
+        # input is compatible with the model
+        fl = fl[:, None, :] + np.zeros((12, fl.shape[-1]))
         np.save(preproc_filename, fl, allow_pickle=False)
 
     return torch.from_numpy(fl), torch.from_numpy(dwl['labels'])
