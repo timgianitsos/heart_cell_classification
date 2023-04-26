@@ -503,3 +503,5 @@ $RECYCLE.BIN/
 # Project-specific files to ignore
 results
 *.npz
+*.npy
+*.pth
