@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from arg_parser import ArgParser
 from dataset import FluorescenceTimeSeriesDataset
-from layer.resnet1d import ResNet1d
+from model import ResNet1d
 from logger import TrainLogger
 
 def get_model():
