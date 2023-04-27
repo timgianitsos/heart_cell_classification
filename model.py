@@ -1,9 +1,8 @@
-from pathlib import Path
 import torch
 import torch.nn as nn
 import numpy as np
 
-def get_model():
+def get_model(model_load_path):
     '''
     Model arguments found here:
     https://github.com/antonior92/ecg-age-prediction/blob/f9801bbe7eb2ce8c5416f5d3d4182c7302813dec/train.py#L182-L183
@@ -19,9 +18,6 @@ def get_model():
     kernel_size = 17
     dropout_rate = 0.8
 
-    ckpt_dir = Path('checkpoints')
-    ckpt = torch.load(ckpt_dir / 'model.pth')
-
     model = ResNet1d(input_dim=(N_LEADS, seq_length),
         blocks_dim=list(zip(net_filter_size, net_seq_length)),
         n_classes=N_CLASSES,
@@ -29,7 +25,7 @@ def get_model():
         dropout_rate=dropout_rate
     )
 
-    model.load_state_dict(ckpt['model'])
+    model.load_state_dict(torch.load(model_load_path)['model'])
     return model
 
 def _padding(downsample, kernel_size):

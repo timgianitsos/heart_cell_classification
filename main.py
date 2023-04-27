@@ -12,9 +12,13 @@ from logger import TrainLogger
 def main():
     args = ArgParser().parse_args()
 
-    model = get_model().to(args._derived['devices'][0])
+    model = get_model(args.model_load_path).to(args._derived['devices'][0])
     if args._derived['devices'][0] != 'cpu':
-        model = nn.DataParallel(model, device_ids=args._derived['devices'], output_device=args._derived['devices'][0])
+        model = nn.DataParallel(
+            model,
+            device_ids=args._derived['devices'],
+            output_device=args._derived['devices'][0]
+        )
 
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
 
