@@ -44,12 +44,11 @@ def main():
             inp = inp.to(args._derived['devices'][0])
             target = target.to(args._derived['devices'][0])
             out = model(inp)
-            breakpoint()
             loss = F.cross_entropy(out, target)
-            loss.backwards()
+            loss.backward()
 
             opt.step()
-            log_iter_classifier(self, args.batch_size, loss)
+            logger.log_iter_classifier(args.batch_size, loss)
             logger.end_iter()
         logger.end_epoch()
 

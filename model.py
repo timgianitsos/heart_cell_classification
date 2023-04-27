@@ -27,6 +27,10 @@ def get_model(model_load_path):
 
     model = ResNet1d(**model_args)
     model.load_state_dict(torch.load(model_load_path)['model'])
+    # The model was originally a binary classification problem. Here, we
+    # replace the last layer to have 12 outputs to correspond to 12
+    # possible classifications.
+    model.lin = nn.Linear(model.last_layer_dim, 12)
     return model, model_args
 
 def _padding(downsample, kernel_size):
@@ -153,8 +157,8 @@ class ResNet1d(nn.Module):
 
         # Linear layer
         n_filters_last, n_samples_last = blocks_dim[-1]
-        last_layer_dim = n_filters_last * n_samples_last
-        self.lin = nn.Linear(last_layer_dim, n_classes)
+        self.last_layer_dim = n_filters_last * n_samples_last
+        self.lin = nn.Linear(self.last_layer_dim, n_classes)
         self.n_blk = len(blocks_dim)
 
     def forward(self, x):
