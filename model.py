@@ -17,16 +17,17 @@ def get_model(model_load_path):
     N_LEADS = 12
     kernel_size = 17
     dropout_rate = 0.8
+    model_args = {
+        'input_dim': (N_LEADS, seq_length),
+        'blocks_dim': list(zip(net_filter_size, net_seq_length)),
+        'n_classes': N_CLASSES,
+        'kernel_size': kernel_size,
+        'dropout_rate': dropout_rate,
+    }
 
-    model = ResNet1d(input_dim=(N_LEADS, seq_length),
-        blocks_dim=list(zip(net_filter_size, net_seq_length)),
-        n_classes=N_CLASSES,
-        kernel_size=kernel_size,
-        dropout_rate=dropout_rate
-    )
-
+    model = ResNet1d(**model_args)
     model.load_state_dict(torch.load(model_load_path)['model'])
-    return model
+    return model, model_args
 
 def _padding(downsample, kernel_size):
     """Compute required padding"""

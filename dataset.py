@@ -61,6 +61,9 @@ class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
 
         self.inputs = torch.from_numpy(fl)
         self.outputs = torch.from_numpy(dwl['labels'])
+        self.padding = torch.zeros(
+            (11, self.inputs.shape[-1]), dtype=self.inputs.dtype
+        )
 
     def __len__(self):
         """Required: specify dataset length for dataloader"""
@@ -69,13 +72,11 @@ class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         """
         Required: specify what each iteration in dataloader yields
-        The model expects 12 time series per input, but each cell is only
-        a single time series. We expand the array to have 12 time series but
-        11 of them will be 0's.
+
+        The model expects 12 time series per input, but each cell's
+        fluorescence data is only a single time series. We expand the array to
+        have 12 time series but 11 of them will be 0's.
         """
-        inps = np.concatenate([
-            self.inputs[index].reshape(1, -1),
-            np.zeros((11, self.inputs.shape[-1]))
-        ])
+        inps = torch.cat([self.inputs[index].reshape(1, -1), self.padding])
         return inps, self.outputs[index]
 
