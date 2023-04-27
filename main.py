@@ -3,15 +3,13 @@ from collections import deque
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from tqdm import tqdm
 
 from arg_parser import ArgParser
 from dataset import FluorescenceTimeSeriesDataset
 from model import get_model
 from logger import TrainLogger
-
-def compute_loss(out, res):
-    return torch.tensor([0.], dtype=torch.float32)
 
 def main():
     args = ArgParser().parse_args()
@@ -39,14 +37,15 @@ def main():
 
     for epoch in range(args.num_epochs):
         logger.start_epoch()
-        for inp, out in tqdm(loader, dynamic_ncols=True):
+        for inp, target in tqdm(loader, dynamic_ncols=True):
             logger.start_iter()
             opt.zero_grad()
 
             inp = inp.to(args._derived['devices'][0])
-            out = out.to(args._derived['devices'][0])
-            res = model(inp)
-            loss = compute_loss(out, res)
+            target = target.to(args._derived['devices'][0])
+            out = model(inp)
+            breakpoint()
+            loss = F.cross_entropy(out, target)
             loss.backwards()
 
             opt.step()

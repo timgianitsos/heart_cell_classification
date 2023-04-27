@@ -9,14 +9,14 @@ def preprocess(a):
     # Model was originally trained on sequences of 10 seconds at about 400 Hz.
     # Fluorescence cell data is 10 seconds at about 100 Hz.
     # Since the time period that each was recorded at are both 10 seconds,
-    # we can simply resample the Hz with no additional processing.
+    # we can simply resample the Hz.
     a = resample(a, 4096, axis=1)
 
     # One of the datasets that the model was validated on was "Sami-Trop"
     # https://zenodo.org/record/4905618#.ZEQ2mS2B30o
     # I (Tim) noticed that the median across all samples was exactly 0.
     # This is strong evidence that the data was median-centered (as opposed to
-    # no preprocessing altogether or mean-centered) before being passed to the
+    # mean-centered or no centering altogether) before being passed to the
     # model. I decided to median-center each time series by its median (as
     # opposed to center all time series by the same median computed across all
     # samples which is likely what "Sami-Trap" did).
@@ -60,7 +60,9 @@ class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
             print(f'Done! Saved to "{preproc_filename}"')
 
         self.inputs = torch.from_numpy(fl)
-        self.outputs = torch.from_numpy(dwl['labels'])
+        self.outputs = torch.from_numpy((
+            dwl['labels'] / dwl['labels'].sum(axis=1)[:, None]
+        ).astype(np.float32))
         self.padding = torch.zeros(
             (11, self.inputs.shape[-1]), dtype=self.inputs.dtype
         )
