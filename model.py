@@ -1,12 +1,41 @@
+from pathlib import Path
+import torch
 import torch.nn as nn
 import numpy as np
 
+def get_model():
+    '''
+    Model arguments found here:
+    https://github.com/antonior92/ecg-age-prediction/blob/f9801bbe7eb2ce8c5416f5d3d4182c7302813dec/train.py#L182-L183
+
+    and here:
+    https://www.dropbox.com/s/thvqwaryeo8uemo/model.zip?file_subpath=%2Fmodel%2Fconfig.json
+    '''
+    seq_length = 4096
+    net_filter_size = [64,128,196,256,320]
+    net_seq_length = [4096,1024,256,64,16]
+    N_CLASSES = 1
+    N_LEADS = 12
+    kernel_size = 17
+    dropout_rate = 0.8
+
+    ckpt_dir = Path('checkpoints')
+    ckpt = torch.load(ckpt_dir / 'model.pth')
+
+    model = ResNet1d(input_dim=(N_LEADS, seq_length),
+        blocks_dim=list(zip(net_filter_size, net_seq_length)),
+        n_classes=N_CLASSES,
+        kernel_size=kernel_size,
+        dropout_rate=dropout_rate
+    )
+
+    model.load_state_dict(ckpt['model'])
+    return model
 
 def _padding(downsample, kernel_size):
     """Compute required padding"""
     padding = max(0, int(np.floor((kernel_size - downsample + 1) / 2)))
     return padding
-
 
 def _downsample(n_samples_in, n_samples_out):
     """Compute downsample rate"""
@@ -18,9 +47,13 @@ def _downsample(n_samples_in, n_samples_out):
                          "should always decrease by an integer factor.")
     return downsample
 
-
 class ResBlock1d(nn.Module):
-    """Residual network unit for unidimensional signals."""
+    """
+    Residual network unit for unidimensional signals.
+
+    Model code is from
+    https://github.com/antonior92/ecg-age-prediction/blob/f9801bbe7eb2ce8c5416f5d3d4182c7302813dec/resnet.py
+    """
 
     def __init__(self, n_filters_in, n_filters_out, downsample, kernel_size, dropout_rate):
         if kernel_size % 2 == 0:
@@ -74,7 +107,6 @@ class ResBlock1d(nn.Module):
         x = self.relu(x)
         x = self.dropout2(x)
         return x, y
-
 
 class ResNet1d(nn.Module):
     """Residual network for unidimensional signals.

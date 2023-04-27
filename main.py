@@ -1,5 +1,4 @@
 from collections import deque
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -7,37 +6,8 @@ import torch.nn as nn
 
 from arg_parser import ArgParser
 from dataset import FluorescenceTimeSeriesDataset
-from model import ResNet1d
+from model import get_model
 from logger import TrainLogger
-
-def get_model():
-    '''
-    Model arguments found here:
-    https://github.com/antonior92/ecg-age-prediction/blob/f9801bbe7eb2ce8c5416f5d3d4182c7302813dec/train.py#L182-L183
-
-    and here:
-    https://www.dropbox.com/s/thvqwaryeo8uemo/model.zip?file_subpath=%2Fmodel%2Fconfig.json
-    '''
-    seq_length = 4096
-    net_filter_size = [64,128,196,256,320]
-    net_seq_length = [4096,1024,256,64,16]
-    N_CLASSES = 1
-    N_LEADS = 12
-    kernel_size = 17
-    dropout_rate = 0.8
-
-    ckpt_dir = Path('checkpoints')
-    ckpt = torch.load(ckpt_dir / 'model.pth')
-
-    model = ResNet1d(input_dim=(N_LEADS, seq_length),
-        blocks_dim=list(zip(net_filter_size, net_seq_length)),
-        n_classes=N_CLASSES,
-        kernel_size=kernel_size,
-        dropout_rate=dropout_rate
-    )
-
-    model.load_state_dict(ckpt['model'])
-    return model
 
 def main():
     args = ArgParser().parse_args()
