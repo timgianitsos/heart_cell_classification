@@ -5,7 +5,7 @@ import os
 from os.path import dirname, join
 import random
 import subprocess
-from sys import argv
+from sys import argv, stderr
 
 import torch
 import numpy as np
@@ -123,6 +123,12 @@ class ArgParser:
             with open(join(save_dir_current, 'args.json'), 'w') as fh:
                 json.dump(vars(args), fh, indent=4, sort_keys=True)
                 fh.write('\n')
+        else:
+            print(
+                'WARNING: Since --save_dir_root is not set, neither the model '
+                'weights nor the model metrics will be saved',
+                sys.stderr
+            )
 
         random.seed(args.seed)
         np.random.seed(args.seed)

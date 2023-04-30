@@ -27,10 +27,33 @@ def get_model(model_load_path):
 
     model = ResNet1d(**model_args)
     model.load_state_dict(torch.load(model_load_path)['model'])
+
+    # The model originally took 12 channels as input (corresponding to a 12
+    # lead ECG). Here, we construct a new initial convolutional layer. Since
+    # each cell only has one channel, we copy the parameter values
+    # corresponding to the first channel and ignore the rest.
+    n_samples_in, n_samples_out = model_args['input_dim'][1], model_args[
+        'blocks_dim'
+    ][0][1]
+    downsample = _downsample(n_samples_in, n_samples_out)
+    padding = _padding(downsample, model_args['kernel_size'])
+    newconv1 = nn.Conv1d(
+        1, 64, 17, bias=False, stride=downsample, padding=padding
+    )
+    with torch.no_grad():
+        next(newconv1.parameters())[:, :, :] = next(
+            model.conv1.parameters()
+        )[:, 0: 1, :]
+        model.conv1 = newconv1
+
     # The model was originally a binary classification problem. Here, we
     # replace the last layer to have 12 outputs to correspond to 12
     # possible classifications.
+    # The fact that there were originally 12 input channels and there are now
+    # 12 output classes is a numerical coincidence - both values of 12 have
+    # nothing to do with each other.
     model.lin = nn.Linear(model.last_layer_dim, 12)
+
     return model, model_args
 
 def _padding(downsample, kernel_size):

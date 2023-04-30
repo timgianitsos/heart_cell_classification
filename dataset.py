@@ -62,9 +62,6 @@ class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
         self.outputs = torch.from_numpy((
             dwl['labels'] / dwl['labels'].sum(axis=1)[:, None]
         ).astype(np.float32))
-        self.padding = torch.zeros(
-            (11, self.inputs.shape[-1]), dtype=self.inputs.dtype
-        )
 
     def __len__(self):
         """Required: specify dataset length for dataloader"""
@@ -78,6 +75,5 @@ class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
         fluorescence data is only a single time series. We expand the array to
         have 12 time series but 11 of them will be 0's.
         """
-        inps = torch.cat([self.inputs[index].reshape(1, -1), self.padding])
-        return inps, self.outputs[index]
+        return self.inputs[index].reshape(1, -1), self.outputs[index]
 
