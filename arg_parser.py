@@ -20,20 +20,26 @@ class ArgParser:
 
         # System configurations
         self.parser.add_argument('--gpu_ids', type=str, default='0' if torch.cuda.is_available() else '-1', help='Comma-separated list of GPU IDs. Use -1 for CPU.')
-        self.parser.add_argument('--num_workers', default=1, type=int, help='Number of threads for the DataLoader.')
+        self.parser.add_argument('--num_workers', default=4, type=int, help='Number of threads for the DataLoader.')
         self.parser.add_argument('--dataset_root', type=str, default=join(dirname(argv[0]), 'data'), help='The root of the dataset directory')
 
         # Model hyperparameters
-        self.parser.add_argument('--batch_size', type=int, default=64, help='Batch size.')
+        self.parser.add_argument('--batch_size', type=int, default=256, help='Batch size.')
         self.parser.add_argument('--num_epochs', type=int, default=100, help='Number of epochs to train.')
-        self.parser.add_argument('--lr', type=float, default=5e-4, help='Learning rate.')
+        self.parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate.')
+        self.parser.add_argument('--optimizer', type=str, default='Adam', choices=[
+            k for k, v in vars(torch.optim).items() if type(v) == type and issubclass(v, torch.optim.Optimizer)
+        ], help='Available optimizers')
+        if self.parser.parse_known_args()[0].optimizer == 'Adam':
+            self.parser.add_argument('--adam_beta1', type=float, default=0.9, help='Beta 1, only applies to Adam optimizer')
+            self.parser.add_argument('--adam_beta2', type=float, default=0.999, help='Beta 2, only applies to Adam optimizer')
 
         # Checkpointing
         self.parser.add_argument('--save_dir_root', type=lambda x: None if x == 'None' else x, default=None, help='Directory for results, prefix. Use `None` to neglect outputs (for debugging)')
         self.parser.add_argument('--model_load_path', type=str, default=join(dirname(argv[0]), 'checkpoints', 'model.pth'), help='Load from a previous checkpoint.')
-        self.parser.add_argument('--num_visuals', type=str, default=10, help='Number of visual examples to show per batch on Tensorboard.')
-        self.parser.add_argument('--max_ckpts', type=int, default=15, help='Max ckpts to save.')
-        self.parser.add_argument('--steps_per_print', type=int, default=50, help='Steps taken for each print of logger')
+        self.parser.add_argument('--num_visuals', type=str, default=10, help='Number of visual examples to show per batch on Tensorboard (only applicable for generative models).')
+        self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
+        self.parser.add_argument('--steps_per_print', type=int, default=15, help='Steps taken for each print of logger')
         self.parser.add_argument('--steps_per_visual', type=int, default=400, help='Steps for each visual to be printed by logger in tensorboard')
         self.parser.add_argument('--epochs_per_model_save', type=int, default=10, help='Epochs for a model checkpoint to be saved')
 

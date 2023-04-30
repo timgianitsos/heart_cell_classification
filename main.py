@@ -1,4 +1,5 @@
 from collections import deque
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -18,12 +19,18 @@ def main():
     model = model.to(args._derived['devices'][0])
     if args._derived['devices'][0] != 'cpu':
         model = nn.DataParallel(
+            # TODO consider using DistributedDataParallel in the future
             model,
             device_ids=args._derived['devices'],
             output_device=args._derived['devices'][0]
         )
 
-    opt = torch.optim.Adam(model.parameters(), lr=args.lr)
+    opt_cls = getattr(torch.optim, args.optimizer)
+    if opt_cls is torch.optim.Adam:
+        opt_kwargs = {'betas': (args.adam_beta1, args.adam_beta2)}
+    else:
+        opt_kwargs = {}
+    opt = opt_cls(model.parameters(), lr=args.lr, **opt_kwargs)
 
     loader = torch.utils.data.DataLoader(
         FluorescenceTimeSeriesDataset(args.dataset_root),
@@ -52,24 +59,24 @@ def main():
             logger.end_iter()
         logger.end_epoch()
 
-    if args.save_dir_root and epoch % args.epochs_per_model_save == 0:
-        samples_processed = (epoch + 1) * len(loader)
-        m = model.module if args._derived['devices'][0] != 'cpu' else m
-        ckpt_dict = {
-            'ckpt_info': {'samples_processed': samples_processed},
-            'model_name': m.__class__.__name__,
-            'model_state': m.state_dict(),
-            'optimizer': opt.state_dict(),
-            'model_args': model_args
-        }
-        ckpt_path = (
-            Path(args._derived['ckpt_dir']) / f'step_{images_processed}.pth'
-        )
-        torch.save(ckpt_dict, ckpt_path)
-        ckpt_paths.append(ckpt_path)
-        if len(ckpt_paths) > args.max_ckpts:
-            oldest_ckpt = ckpt_paths.popleft()
-            os.remove(oldest_ckpt)
+        if args.save_dir_root and epoch % args.epochs_per_model_save == 0:
+            samples_processed = (epoch + 1) * len(loader)
+            m = model.module if args._derived['devices'][0] != 'cpu' else m
+            ckpt_dict = {
+                'ckpt_info': {'samples_processed': samples_processed},
+                'model_name': m.__class__.__name__,
+                'model_state': m.state_dict(),
+                'optimizer': opt.state_dict(),
+                'model_args': model_args
+            }
+            ckpt_path = (
+                Path(args._derived['ckpt_dir']) / f'step_{samples_processed}.pth'
+            )
+            torch.save(ckpt_dict, ckpt_path)
+            ckpt_paths.append(ckpt_path)
+            if len(ckpt_paths) > args.max_ckpts:
+                oldest_ckpt = ckpt_paths.popleft()
+                os.remove(oldest_ckpt)
 
 if __name__ == '__main__':
     main()
