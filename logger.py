@@ -18,11 +18,12 @@ class BaseLogger(object):
         self.name = args._derived['full_name']
         self.batch_size = args.batch_size
         self.save_dir = args._derived.get('save_dir_current', None)
-        self.num_visuals = args.num_visuals
         
         self.dataset_len = dataset_len
 
         if self.save_dir:
+            self.num_visuals = args.num_visuals
+
             tb_dir = Path('/'.join(self.save_dir.split('/')[:-1])) / 'tb' / self.name
             os.makedirs(tb_dir, exist_ok=True)
             self.log_filepath = os.path.join(self.save_dir, f'{self.name}.log')
@@ -160,7 +161,9 @@ class TrainLogger(BaseLogger):
         
         self.iter = 0
         self.steps_per_print = args.steps_per_print
-        self.steps_per_visual = args.steps_per_visual
+
+        if self.save_dir:
+            self.steps_per_visual = args.steps_per_visual
 
     def log_hparams(self, args):
         """Log all the hyper parameters in tensorboard"""
