@@ -1,5 +1,6 @@
 from collections import deque
 from pathlib import Path
+import os
 
 import numpy as np
 import torch
@@ -25,6 +26,7 @@ def main():
             output_device=args._derived['devices'][0]
         )
 
+    # TODO allow for loading optimizer from checkpoint
     opt_cls = getattr(torch.optim, args.optimizer)
     if opt_cls is torch.optim.Adam:
         opt_kwargs = {'betas': (args.adam_beta1, args.adam_beta2)}
@@ -42,7 +44,7 @@ def main():
     logger = TrainLogger(args, len(loader), phase=None)
     logger.log_hparams(args)
 
-    for epoch in range(args.num_epochs):
+    for epoch in range(1, args.num_epochs + 1):
         logger.start_epoch()
         for inp, target in tqdm(loader, dynamic_ncols=True):
             logger.start_iter()
@@ -69,9 +71,9 @@ def main():
                 'optimizer': opt.state_dict(),
                 'model_args': model_args
             }
-            ckpt_path = (
-                Path(args._derived['ckpt_dir']) / f'step_{samples_processed}.pth'
-            )
+            ckpt_path = Path(
+                args._derived['ckpt_dir']
+            ) / f'step_{samples_processed}.pth'
             torch.save(ckpt_dict, ckpt_path)
             ckpt_paths.append(ckpt_path)
             if len(ckpt_paths) > args.max_ckpts:

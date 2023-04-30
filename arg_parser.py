@@ -26,7 +26,7 @@ class ArgParser:
         # Model hyperparameters
         self.parser.add_argument('--batch_size', type=int, default=256, help='Batch size.')
         self.parser.add_argument('--num_epochs', type=int, default=100, help='Number of epochs to train.')
-        self.parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate.')
+        self.parser.add_argument('--lr', type=float, default=5e-4, help='Learning rate.')
         self.parser.add_argument('--optimizer', type=str, default='Adam', choices=[
             k for k, v in vars(torch.optim).items() if type(v) == type and issubclass(v, torch.optim.Optimizer)
         ], help='Available optimizers')
@@ -35,13 +35,14 @@ class ArgParser:
             self.parser.add_argument('--adam_beta2', type=float, default=0.999, help='Beta 2, only applies to Adam optimizer')
 
         # Checkpointing
-        self.parser.add_argument('--save_dir_root', type=lambda x: None if x == 'None' else x, default=None, help='Directory for results, prefix. Use `None` to neglect outputs (for debugging)')
         self.parser.add_argument('--model_load_path', type=str, default=join(dirname(argv[0]), 'checkpoints', 'model.pth'), help='Load from a previous checkpoint.')
-        self.parser.add_argument('--num_visuals', type=str, default=10, help='Number of visual examples to show per batch on Tensorboard (only applicable for generative models).')
-        self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
         self.parser.add_argument('--steps_per_print', type=int, default=15, help='Steps taken for each print of logger')
-        self.parser.add_argument('--steps_per_visual', type=int, default=400, help='Steps for each visual to be printed by logger in tensorboard')
-        self.parser.add_argument('--epochs_per_model_save', type=int, default=10, help='Epochs for a model checkpoint to be saved')
+        self.parser.add_argument('--save_dir_root', type=lambda x: None if x == 'None' else x, default=None, help='Directory for results, prefix. Use `None` to neglect outputs (for debugging)')
+        if self.parser.parse_known_args()[0].save_dir_root:
+            self.parser.add_argument('--num_visuals', type=str, default=10, help='Number of visual examples to show per batch on Tensorboard (only applicable for generative models).')
+            self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
+            self.parser.add_argument('--steps_per_visual', type=int, default=400, help='Steps for each visual to be printed by logger in tensorboard')
+            self.parser.add_argument('--epochs_per_model_save', type=int, default=5, help='Epochs for a model checkpoint to be saved')
 
     def parse_args(self):
         args = self.parser.parse_args()
@@ -74,15 +75,6 @@ class ArgParser:
             f'{args.name}_{datetime.now().strftime("%b%d_%H%M%S")}'
             f'_{os.getlogin()}'
         )
-        if args.save_dir_root:
-            # Create sub directories
-            save_dir_current = join(
-                args.save_dir_root, args._derived['full_name']
-            )
-            args._derived['save_dir_current'] = save_dir_current
-            os.makedirs(save_dir_current, exist_ok=False)
-            args._derived['ckpt_dir'] = join(save_dir_current, 'ckpts')
-            os.makedirs(args._derived['ckpt_dir'], exist_ok=False)
 
         # Convert comma-separated arguments to a list
         args_to_list = lambda csv, arg_type=int: [
@@ -110,6 +102,24 @@ class ArgParser:
 
         # Save args to a JSON file
         if args.save_dir_root:
+            if args.num_epochs % args.epochs_per_model_save:
+                raise ValueError(
+                    f'The total number of epochs {args.num_epochs} is not '
+                    f'divisible by the number of epochs that happen per '
+                    f'model save checkpoint which is '
+                    f'{args.epochs_per_model_save}. This means that the last '
+                    f'{args.num_epochs % args.epochs_per_model_save} epoch(s) '
+                    f'would be wasted effort since there is no checkpoint '
+                    f'at the end.'
+                )
+            # Create sub directories
+            save_dir_current = join(
+                args.save_dir_root, args._derived['full_name']
+            )
+            args._derived['save_dir_current'] = save_dir_current
+            os.makedirs(save_dir_current, exist_ok=False)
+            args._derived['ckpt_dir'] = join(save_dir_current, 'ckpts')
+            os.makedirs(args._derived['ckpt_dir'], exist_ok=False)
             with open(join(save_dir_current, 'args.json'), 'w') as fh:
                 json.dump(vars(args), fh, indent=4, sort_keys=True)
                 fh.write('\n')
