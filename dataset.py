@@ -55,7 +55,6 @@ class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
             np.savez_compressed(
                 preproc_filename,
                 fluorescence_intensities=fl,
-                allow_pickle=False
             )
             print(f'Done! Saved to "{preproc_filename}"')
 

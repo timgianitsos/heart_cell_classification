@@ -18,6 +18,7 @@ def main():
 
     model, model_args = get_model(args.model_load_path)
     model = model.to(args._derived['devices'][0])
+    model.train() # TODO should it be `model = model.train()`?
     if args._derived['devices'][0] != 'cpu':
         model = nn.DataParallel(
             # TODO consider using DistributedDataParallel in the future
@@ -68,7 +69,6 @@ def main():
                 'ckpt_info': {'samples_processed': samples_processed},
                 'model_name': m.__class__.__name__,
                 'model_state': m.state_dict(),
-                'optimizer': opt.state_dict(),
                 'model_args': model_args
             }
             ckpt_path = Path(
