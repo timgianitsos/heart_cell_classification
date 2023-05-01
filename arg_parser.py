@@ -26,8 +26,8 @@ class ArgParser:
         # Model hyperparameters
         self.parser.add_argument('--batch_size', type=int, default=256, help='Batch size.')
         self.parser.add_argument('--num_epochs', type=int, default=100, help='Number of epochs to train.')
-        self.parser.add_argument('--lr', type=float, default=5e-4, help='Learning rate.')
-        self.parser.add_argument('--optimizer', type=str, default='Adam', choices=[
+        self.parser.add_argument('--lr', type=float, default=5e-3, help='Learning rate.')
+        self.parser.add_argument('--optimizer', type=str, default='RMSprop', choices=[
             k for k, v in vars(torch.optim).items() if type(v) == type and issubclass(v, torch.optim.Optimizer)
         ], help='Available optimizers')
         if self.parser.parse_known_args()[0].optimizer == 'Adam':
@@ -125,9 +125,9 @@ class ArgParser:
                 fh.write('\n')
         else:
             print(
-                'WARNING: Since --save_dir_root is not set, neither the model '
-                'weights nor the model metrics will be saved',
-                sys.stderr
+                '\nWARNING: Since --save_dir_root is not set, neither the model '
+                'weights nor the model metrics will be saved\n',
+                file=stderr
             )
 
         random.seed(args.seed)
