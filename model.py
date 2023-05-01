@@ -26,7 +26,7 @@ def get_model(model_load_path):
     }
 
     model = ResNet1d(**model_args)
-    model.load_state_dict(torch.load(model_load_path)['model'])
+    model.load_state_dict(torch.load(model_load_path, map_location='cpu')['model'])
 
     # The model originally took 12 channels as input (corresponding to a 12
     # lead ECG). Here, we construct a new initial convolutional layer. Since
