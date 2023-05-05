@@ -37,7 +37,7 @@ class ArgParser:
 
         # Checkpointing
         self.parser.add_argument('--model_load_path', type=str, default=join(dirname(argv[0]), 'checkpoints', 'model.pth'), help='Load from a previous checkpoint.')
-        self.parser.add_argument('--steps_per_dev_eval', type=int, default=15, help='Batches processed for each print of logger and evaluation of dev step.')
+        self.parser.add_argument('--steps_per_dev_eval', type=int, default=30, help='Batches processed for each print of logger and evaluation of dev step.')
         self.parser.add_argument('--save_dir_root', type=lambda x: None if x == 'None' else x, default=None, help='Directory for results, prefix. Use `None` to neglect outputs (for debugging)')
         if self.parser.parse_known_args()[0].save_dir_root:
             self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')

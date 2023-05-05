@@ -83,7 +83,8 @@ class TrainLogger(BaseLogger):
         
         self.num_epochs = args.num_epochs
 
-        self.classifier_loss_meter = AverageValueMeter()
+        self.train_loss_meter = AverageValueMeter()
+        self.dev_loss_meter = AverageValueMeter()
         
         self.steps_per_dev_eval = args.steps_per_dev_eval
 
@@ -101,22 +102,36 @@ class TrainLogger(BaseLogger):
         """Log info for start of an iteration."""
         pass
 
-    def log_iter(self, batch_size, train_loss):
+    # TODO function takes too many arguments
+    def log_iter(self, batch_size, train_loss, model, dev_loader, args):
         train_loss = train_loss.item()
-        self.classifier_loss_meter.add(train_loss, batch_size)
+        self.train_loss_meter.add(train_loss, batch_size)
 
         # Periodically write to the log and TensorBoard
         if self.iter % self.steps_per_dev_eval == 0:
 
+            model.eval()
+            with torch.no_grad():
+                for inp, target in dev_loader:
+                    inp = inp.to(args._derived['devices'][0])
+                    target = target.to(args._derived['devices'][0])
+                    out = model(inp)
+                    dev_loss = F.cross_entropy(out, target).item()
+                    self.dev_loss_meter.add(dev_loss, len(inp))
+            model.train()
+
             # Write a header for the log entry
-            message = f"[epoch: {self.epoch}, iter: {self.iter} / {self.dataset_len}, train_loss: {self.classifier_loss_meter.mean:.3g}]"
+            message = f"[epoch: {self.epoch}, iter: {self.iter} / {self.dataset_len}, train_loss: {self.train_loss_meter.mean:.3g}, test_loss: {self.dev_loss_meter.mean:.3g}]"
             self.write(message)
 
             # Write all errors as scalars to the graph
-            self._log_scalars({'Loss': self.classifier_loss_meter.mean},
-                              print_to_stdout=False,
-                              unique_id=self.tag_suffix)
-            self.classifier_loss_meter.reset()
+            # TODO consider plotting loss std
+            self._log_scalars({
+                'TrainLoss': self.train_loss_meter.mean,
+                'DevLoss': self.dev_loss_meter.mean,
+            }, print_to_stdout=False, unique_id=self.tag_suffix)
+            self.train_loss_meter.reset()
+            self.dev_loss_meter.reset()
 
     def end_iter(self):
         """Log info for end of an iteration."""

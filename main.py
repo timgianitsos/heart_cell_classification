@@ -68,7 +68,7 @@ def main():
             loss.backward()
             opt.step()
 
-            logger.log_iter(len(inp), loss)
+            logger.log_iter(len(inp), loss, model, dev_loader, args)
             logger.end_iter()
         logger.end_epoch()
 

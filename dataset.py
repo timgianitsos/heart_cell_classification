@@ -65,6 +65,9 @@ def get_train_dev_datasets(data_root, ratio_train_set_to_whole):
     ).astype(np.float32))
 
     dataset = FluorescenceTimeSeriesDataset(inputs, targets)
+    # TODO consider stratified sampling. This might be difficult since there
+    # are not merely 12 possible labels but 2^12 because each waveform can
+    # be assigned multiple of the 12 labels. However, still worth looking into.
     return random_split(dataset, [
         ratio_train_set_to_whole, 1 - ratio_train_set_to_whole
     ])
