@@ -502,6 +502,7 @@ $RECYCLE.BIN/
 
 # Project-specific files to ignore
 results
+checkpoints
 *.npz
 *.npy
 *.pth

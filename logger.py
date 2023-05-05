@@ -111,7 +111,7 @@ class TrainLogger(BaseLogger):
         if self.iter % self.steps_per_dev_eval == 0:
 
             model.eval()
-            with torch.no_grad():
+            with torch.inference_mode():
                 for inp, target in dev_loader:
                     inp = inp.to(args._derived['devices'][0])
                     target = target.to(args._derived['devices'][0])

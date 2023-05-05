@@ -6,7 +6,7 @@ from scipy.signal import resample
 import torch
 from torch.utils.data import Dataset, random_split
 
-def _preprocess(a):
+def preprocess(a):
     # Model was originally trained on sequences of 10 seconds at about 400 Hz.
     # Fluorescence cell data is 10 seconds at about 100 Hz.
     # Since the time period that each was recorded at are both 10 seconds,
@@ -52,7 +52,7 @@ def get_train_dev_datasets(data_root, ratio_train_set_to_whole):
     else:
         print(f'Preprocessing dataset... ', end='')
         fl = dwl['fluorescence_intensities']
-        fl = _preprocess(fl)
+        fl = preprocess(fl)
         np.savez_compressed(
             preproc_filename,
             fluorescence_intensities=fl,
@@ -74,7 +74,7 @@ def get_train_dev_datasets(data_root, ratio_train_set_to_whole):
 
 class FluorescenceTimeSeriesDataset(Dataset):
 
-    def __init__(self, inputs, targets):
+    def __init__(self, inputs, targets=None):
         self.inputs = inputs
         self.targets = targets
 
@@ -92,6 +92,9 @@ class FluorescenceTimeSeriesDataset(Dataset):
         """
         # TODO this class is only necessary because of the reshaping here.
         # Without it, we could just use torch.utils.data.TensorDataset
-        # Consider a more elegant way to handle this reshaping upstreadm
+        # Consider a more elegant way to handle this reshaping upstream
         # to obviate the need for this class.
-        return self.inputs[index].reshape(1, -1), self.targets[index]
+        if self.targets is None:
+            return self.inputs[index].reshape(1, -1)
+        else:
+            return self.inputs[index].reshape(1, -1), self.targets[index]

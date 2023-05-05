@@ -36,7 +36,7 @@ class ArgParser:
             self.parser.add_argument('--adam_beta2', type=float, default=0.999, help='Beta 2, only applies to Adam optimizer')
 
         # Checkpointing
-        self.parser.add_argument('--model_load_path', type=str, default=join(dirname(argv[0]), 'checkpoints', 'model.pth'), help='Load from a previous checkpoint.')
+        self.parser.add_argument('--model_load_path', type=str, default=join(dirname(argv[0]), 'checkpoints', 'model-pretrained.pth'), help='Load from a previous checkpoint.')
         self.parser.add_argument('--steps_per_dev_eval', type=int, default=30, help='Batches processed for each print of logger and evaluation of dev step.')
         self.parser.add_argument('--save_dir_root', type=lambda x: None if x == 'None' else x, default=None, help='Directory for results, prefix. Use `None` to neglect outputs (for debugging)')
         if self.parser.parse_known_args()[0].save_dir_root:
