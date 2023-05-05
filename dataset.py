@@ -52,7 +52,7 @@ def get_train_dev_datasets(data_root, ratio_train_set_to_whole):
     else:
         print(f'Preprocessing dataset... ', end='')
         fl = dwl['fluorescence_intensities']
-        fl = preprocess(fl)
+        fl = _preprocess(fl)
         np.savez_compressed(
             preproc_filename,
             fluorescence_intensities=fl,
@@ -87,4 +87,8 @@ class FluorescenceTimeSeriesDataset(Dataset):
         fluorescence data is only a single time series. We reshape
         array to have a channel dimension of length one.
         """
+        # TODO this class is only necessary because of the reshaping here.
+        # Without it, we could just use torch.utils.data.TensorDataset
+        # Consider a more elegant way to handle this reshaping upstreadm
+        # to obviate the need for this class.
         return self.inputs[index].reshape(1, -1), self.targets[index]

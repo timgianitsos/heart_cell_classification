@@ -37,12 +37,10 @@ class ArgParser:
 
         # Checkpointing
         self.parser.add_argument('--model_load_path', type=str, default=join(dirname(argv[0]), 'checkpoints', 'model.pth'), help='Load from a previous checkpoint.')
-        self.parser.add_argument('--steps_per_print', type=int, default=15, help='Steps taken for each print of logger')
+        self.parser.add_argument('--steps_per_dev_eval', type=int, default=15, help='Batches processed for each print of logger and evaluation of dev step.')
         self.parser.add_argument('--save_dir_root', type=lambda x: None if x == 'None' else x, default=None, help='Directory for results, prefix. Use `None` to neglect outputs (for debugging)')
         if self.parser.parse_known_args()[0].save_dir_root:
-            self.parser.add_argument('--num_visuals', type=str, default=10, help='Number of visual examples to show per batch on Tensorboard (only applicable for generative models).')
             self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
-            self.parser.add_argument('--steps_per_visual', type=int, default=400, help='Steps for each visual to be printed by logger in tensorboard')
             self.parser.add_argument('--epochs_per_model_save', type=int, default=5, help='Epochs for a model checkpoint to be saved')
 
     def parse_args(self):

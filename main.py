@@ -66,9 +66,9 @@ def main():
             out = model(inp)
             loss = F.cross_entropy(out, target)
             loss.backward()
-
             opt.step()
-            logger.log_iter_classifier(args.batch_size, loss)
+
+            logger.log_iter(len(inp), loss)
             logger.end_iter()
         logger.end_epoch()
 
