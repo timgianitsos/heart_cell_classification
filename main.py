@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 from arg_parser import ArgParser
-from dataset import FluorescenceTimeSeriesDataset
+from dataset import get_train_dev_datasets
 from model import get_model
 from logger import TrainLogger
 
@@ -18,7 +18,7 @@ def main():
 
     model, model_args = get_model(args.model_load_path)
     model = model.to(args._derived['devices'][0])
-    model.train() # TODO should it be `model = model.train()`?
+    model.train()
     if args._derived['devices'][0] != 'cpu':
         model = nn.DataParallel(
             # TODO consider using DistributedDataParallel in the future
@@ -35,20 +35,29 @@ def main():
         opt_kwargs = {}
     opt = opt_cls(model.parameters(), lr=args.lr, **opt_kwargs)
 
-    loader = torch.utils.data.DataLoader(
-        FluorescenceTimeSeriesDataset(args.dataset_root),
+    train_dataset, dev_dataset = get_train_dev_datasets(
+        args.dataset_root, args.ratio_train_set_to_whole
+    )
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         shuffle=True,
     )
+    dev_loader = torch.utils.data.DataLoader(
+        dev_dataset,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        shuffle=False,
+    )
 
     ckpt_paths = deque()
-    logger = TrainLogger(args, len(loader), phase=None)
+    logger = TrainLogger(args, len(train_loader), phase=None)
     logger.log_hparams(args)
 
     for epoch in range(1, args.num_epochs + 1):
         logger.start_epoch()
-        for inp, target in tqdm(loader, dynamic_ncols=True):
+        for inp, target in tqdm(train_loader, dynamic_ncols=True):
             logger.start_iter()
             opt.zero_grad()
 
@@ -63,8 +72,9 @@ def main():
             logger.end_iter()
         logger.end_epoch()
 
+        # TODO put this logic inside the .end_epoch() function?
         if args.save_dir_root and epoch % args.epochs_per_model_save == 0:
-            samples_processed = (epoch + 1) * len(loader)
+            samples_processed = (epoch + 1) * len(train_loader)
             m = model.module if args._derived['devices'][0] != 'cpu' else m
             ckpt_dict = {
                 'ckpt_info': {'samples_processed': samples_processed},

@@ -4,8 +4,9 @@ import numpy as np
 import scipy.fft as fft
 from scipy.signal import resample
 import torch
+from torch.utils.data import Dataset, random_split
 
-def preprocess(a):
+def _preprocess(a):
     # Model was originally trained on sequences of 10 seconds at about 400 Hz.
     # Fluorescence cell data is 10 seconds at about 100 Hz.
     # Since the time period that each was recorded at are both 10 seconds,
@@ -29,39 +30,50 @@ def preprocess(a):
     a_smooth = fft.idct(a_fft, type=2, norm='ortho', axis=1)
     return a_smooth
 
-class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
+def get_train_dev_datasets(data_root, ratio_train_set_to_whole):
+    '''
+    The cell fluorescense data is a timeseries. The model was trained on a
+    somewhat similar timeseries (EKG) but at different Hz and with each
+    input consisting of 12 time series (one for each lead).
 
-    def __init__(self, data_root):
-        '''
-        The cell fluorescense data is a timeseries. The model was trained on a
-        somewhat similar timeseries (EKG) but at different Hz and with each
-        input consisting of 12 time series (one for each lead).
+    We attain the cell data, perform some signal preprocessing, and format
+    it to be ingestible by the model.
 
-        We attain the cell data, perform some signal preprocessing, and format
-        it to be ingestible by the model.
-        '''
-        data_root = Path(data_root)
-        dwl = np.load(data_root / 'data-with-labels.npz')
+    We then output a train and dev set.
+    '''
+    data_root = Path(data_root)
+    dwl = np.load(data_root / 'data-with-labels.npz')
 
-        preproc_filename = data_root / 'preprocessed_fluorescence_intensities.npz'
-        if preproc_filename.exists():
-            print(f'Loading data from "{preproc_filename}"... ', end='')
-            fl = np.load(preproc_filename)['fluorescence_intensities']
-            print(f'Done!')
-        else:
-            print(f'Preprocessing dataset... ', end='')
-            fl = dwl['fluorescence_intensities']
-            fl = preprocess(fl)
-            np.savez_compressed(
-                preproc_filename,
-                fluorescence_intensities=fl,
-            )
-            print(f'Done! Saved to "{preproc_filename}"')
+    preproc_filename = data_root / 'preprocessed_fluorescence_intensities.npz'
+    if preproc_filename.exists():
+        print(f'Loading data from "{preproc_filename}"... ', end='')
+        fl = np.load(preproc_filename)['fluorescence_intensities']
+        print(f'Done!')
+    else:
+        print(f'Preprocessing dataset... ', end='')
+        fl = dwl['fluorescence_intensities']
+        fl = preprocess(fl)
+        np.savez_compressed(
+            preproc_filename,
+            fluorescence_intensities=fl,
+        )
+        print(f'Done! Saved to "{preproc_filename}"')
 
-        self.inputs = torch.from_numpy(fl)
-        self.outputs = torch.from_numpy((
-            dwl['labels'] / dwl['labels'].sum(axis=1)[:, None]
-        ).astype(np.float32))
+    inputs = torch.from_numpy(fl)
+    targets = torch.from_numpy((
+        dwl['labels'] / dwl['labels'].sum(axis=1)[:, None]
+    ).astype(np.float32))
+
+    dataset = FluorescenceTimeSeriesDataset(inputs, targets)
+    return random_split(dataset, [
+        ratio_train_set_to_whole, 1 - ratio_train_set_to_whole
+    ])
+
+class FluorescenceTimeSeriesDataset(Dataset):
+
+    def __init__(self, inputs, targets):
+        self.inputs = inputs
+        self.targets = targets
 
     def __len__(self):
         """Required: specify dataset length for dataloader"""
@@ -72,8 +84,7 @@ class FluorescenceTimeSeriesDataset(torch.utils.data.Dataset):
         Required: specify what each iteration in dataloader yields
 
         The model expects 12 time series per input, but each cell's
-        fluorescence data is only a single time series. We expand the array to
-        have 12 time series but 11 of them will be 0's.
+        fluorescence data is only a single time series. We reshape
+        array to have a channel dimension of length one.
         """
-        return self.inputs[index].reshape(1, -1), self.outputs[index]
-
+        return self.inputs[index].reshape(1, -1), self.targets[index]
