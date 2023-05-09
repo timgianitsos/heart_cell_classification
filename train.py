@@ -44,6 +44,8 @@ def main():
         num_workers=args.num_workers,
         shuffle=True,
     )
+    # TODO ensure that the steps per evaluation is less than the number
+    # of steps in a batch
     dev_loader = torch.utils.data.DataLoader(
         dev_dataset,
         batch_size=args.batch_size,
@@ -64,11 +66,15 @@ def main():
             inp = inp.to(args._derived['devices'][0])
             target = target.to(args._derived['devices'][0])
             out = model(inp)
+            # TODO cross entropy is only the same thing as KL divergence when
+            # the reference distribution has entropy 0 (i.e. single label).
+            # Should KL divergence itself be used for samples with multiple
+            # labels?
             loss = F.cross_entropy(out, target)
             loss.backward()
+            logger.log_iter(len(inp), loss, model, dev_loader, args)
             opt.step()
 
-            logger.log_iter(len(inp), loss, model, dev_loader, args)
             logger.end_iter()
         logger.end_epoch()
 

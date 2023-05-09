@@ -106,6 +106,10 @@ class TrainLogger(BaseLogger):
     def log_iter(self, batch_size, train_loss, model, dev_loader, args):
         train_loss = train_loss.item()
         self.train_loss_meter.add(train_loss, batch_size)
+        message = (
+            f'[epoch: {self.epoch}, iter: {self.iter} / {self.dataset_len}'
+            f', train_loss: {self.train_loss_meter.mean:.3g}'
+        )
 
         # Periodically write to the log and TensorBoard
         if self.iter % self.steps_per_dev_eval == 0:
@@ -118,11 +122,15 @@ class TrainLogger(BaseLogger):
                     out = model(inp)
                     dev_loss = F.cross_entropy(out, target).item()
                     self.dev_loss_meter.add(dev_loss, len(inp))
+            # TODO consider whether it is preferrable to set to whatever
+            # mode the model was in before as opposed to always toggling to
+            # `train` (i.e. the model may have been in `eval` mode before this
+            # function was called)
             model.train()
 
             # Write a header for the log entry
-            message = f"[epoch: {self.epoch}, iter: {self.iter} / {self.dataset_len}, train_loss: {self.train_loss_meter.mean:.3g}, test_loss: {self.dev_loss_meter.mean:.3g}]"
-            self.write(message)
+            message += f', test_loss: {self.dev_loss_meter.mean:.3g}]'
+            self.write(message, print_to_stdout=True)
 
             # Write all errors as scalars to the graph
             # TODO consider plotting loss std
@@ -132,6 +140,9 @@ class TrainLogger(BaseLogger):
             }, print_to_stdout=False, unique_id=self.tag_suffix)
             self.train_loss_meter.reset()
             self.dev_loss_meter.reset()
+        else:
+            message += ']'
+            self.write(message, print_to_stdout=False)
 
     def end_iter(self):
         """Log info for end of an iteration."""

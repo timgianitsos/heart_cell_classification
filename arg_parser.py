@@ -24,7 +24,7 @@ class ArgParser:
         self.parser.add_argument('--dataset_root', type=str, default=join(dirname(argv[0]), 'data'), help='The root of the dataset directory')
 
         # Model hyperparameters
-        self.parser.add_argument('--batch_size', type=int, default=256, help='Batch size.')
+        self.parser.add_argument('--batch_size', type=int, default=450, help='Batch size.')
         self.parser.add_argument('--num_epochs', type=int, default=100, help='Number of epochs to train.')
         self.parser.add_argument('--lr', type=float, default=5e-3, help='Learning rate.')
         self.parser.add_argument('--ratio_train_set_to_whole', type=float, default=0.975, help='Ratio of training-set to training-set + dev-set')
