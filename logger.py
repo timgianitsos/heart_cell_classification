@@ -129,7 +129,7 @@ class TrainLogger(BaseLogger):
             model.train()
 
             # Write a header for the log entry
-            message += f', test_loss: {self.dev_loss_meter.mean:.3g}]'
+            message += f', dev_loss: {self.dev_loss_meter.mean:.3g}]'
             self.write(message, print_to_stdout=True)
 
             # Write all errors as scalars to the graph

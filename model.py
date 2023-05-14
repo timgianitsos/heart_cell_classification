@@ -38,7 +38,7 @@ def get_model(model_load_path):
     downsample = _downsample(n_samples_in, n_samples_out)
     padding = _padding(downsample, model_args['kernel_size'])
     newconv1 = nn.Conv1d(
-        1, 64, 17, bias=False, stride=downsample, padding=padding
+        1, net_filter_size[0], kernel_size, bias=False, stride=downsample, padding=padding
     )
     with torch.no_grad():
         next(newconv1.parameters())[:, :, :] = next(

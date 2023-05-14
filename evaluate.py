@@ -31,7 +31,7 @@ def main():
     model_args['n_classes'] = 12
     model = ResNet1d(**model_args)
     model.load_state_dict(model_info['model_state'])
-    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
     model.to(device)
     model.eval()
 

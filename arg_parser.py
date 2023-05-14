@@ -71,8 +71,8 @@ class ArgParser:
 
         # Create save dir for run
         args._derived['full_name'] = (
-            f'{args.name}_{datetime.now().strftime("%b%d_%H%M%S")}'
-            f'_{os.getlogin()}'
+            f'{os.getlogin()}_{datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}'
+            f'_{args.name}'
         )
 
         # Convert comma-separated arguments to a list
