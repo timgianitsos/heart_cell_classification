@@ -26,6 +26,12 @@ def get_model(model_load_path):
     }
 
     model = ResNet1d(**model_args)
+
+    # TODO because the original model authors did not register parameters,
+    # correctly with nn.ModuleList, it is impossible to be able to
+    # simultaneously load the previous model check points, and run on multiple
+    # GPUs. This should be remedied a la
+    # https://discuss.pytorch.org/t/discrepancy-between-manual-parameter-registration-vs-using-nn-modulelist-when-parallelizing/181055
     model.load_state_dict(torch.load(model_load_path, map_location='cpu')['model'])
 
     # The model originally took 12 channels as input (corresponding to a 12

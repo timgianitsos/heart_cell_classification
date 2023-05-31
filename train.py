@@ -24,7 +24,7 @@ def main():
             # TODO consider using DistributedDataParallel in the future
             model,
             device_ids=args._derived['devices'],
-            output_device=args._derived['devices'][0]
+            output_device=args._derived['devices'][0] # TODO read more about this parameter
         )
 
     # TODO allow for loading optimizer from checkpoint
@@ -40,9 +40,10 @@ def main():
     )
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=args.batch_size,
+        batch_size=args.batch_size * len(args._derived['devices']),
         num_workers=args.num_workers,
         shuffle=True,
+        # TODO Consider `drop_last` and `pin_memory
     )
     # TODO ensure that the steps per evaluation is less than the number
     # of steps in a batch
@@ -51,6 +52,7 @@ def main():
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         shuffle=False,
+        # TODO Consider `drop_last` and `pin_memory
     )
 
     ckpt_paths = deque()

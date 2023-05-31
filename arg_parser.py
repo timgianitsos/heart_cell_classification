@@ -24,8 +24,8 @@ class ArgParser:
         self.parser.add_argument('--dataset_root', type=str, default=join(dirname(argv[0]), 'data'), help='The root of the dataset directory')
 
         # Model hyperparameters
-        self.parser.add_argument('--batch_size', type=int, default=450, help='Batch size.')
-        self.parser.add_argument('--num_epochs', type=int, default=100, help='Number of epochs to train.')
+        self.parser.add_argument('--batch_size', type=int, default=450, help='Batch size per device')
+        self.parser.add_argument('--num_epochs', type=int, default=500, help='Number of epochs to train')
         self.parser.add_argument('--lr', type=float, default=5e-3, help='Learning rate.')
         self.parser.add_argument('--ratio_train_set_to_whole', type=float, default=0.975, help='Ratio of training-set to training-set + dev-set')
         self.parser.add_argument('--optimizer', type=str, default='RMSprop', choices=[
@@ -37,11 +37,11 @@ class ArgParser:
 
         # Checkpointing
         self.parser.add_argument('--model_load_path', type=str, default=join(dirname(argv[0]), 'checkpoints', 'model-pretrained.pth'), help='Load from a previous checkpoint.')
-        self.parser.add_argument('--steps_per_dev_eval', type=int, default=30, help='Batches processed for each print of logger and evaluation of dev step.')
+        self.parser.add_argument('--steps_per_dev_eval', type=int, default=15, help='Batches processed for each print of logger and evaluation of dev step.')
         self.parser.add_argument('--save_dir_root', type=lambda x: None if x == 'None' else x, default=None, help='Directory for results, prefix. Use `None` to neglect outputs (for debugging)')
         if self.parser.parse_known_args()[0].save_dir_root:
             self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
-            self.parser.add_argument('--epochs_per_model_save', type=int, default=5, help='Epochs for a model checkpoint to be saved')
+            self.parser.add_argument('--epochs_per_model_save', type=int, default=100, help='Epochs for a model checkpoint to be saved')
 
     def parse_args(self):
         args = self.parser.parse_args()
