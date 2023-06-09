@@ -10,14 +10,33 @@ from tqdm import tqdm
 from dataset import preprocess, FluorescenceTimeSeriesDataset
 from model import ResNet1d
 
+def save_model_guesses(model, device, fluorescence_intensities, output_file):
+    print('Preprocessing dataset...')
+    loader = torch.utils.data.DataLoader(
+        FluorescenceTimeSeriesDataset(inputs=torch.from_numpy(
+            preprocess(fluorescence_intensities)
+        )),
+        batch_size=450,
+        num_workers=4,
+        shuffle=False,
+    )
+
+    with torch.inference_mode():
+        label_guesses = torch.concatenate([
+            F.softmax(model(inp.to(device)), dim=1)
+            for inp in tqdm(
+                loader, desc=f'Generating predictions for {output_file}'
+            )
+        ]).cpu().numpy()
+
+    np.save(output_file, label_guesses)
+
 def main():
-    if len(argv) <= 2:
-        print(f'Usage: python3 {__file__} path/to/model.pth path/to/data.npz', file=stderr)
+    if len(argv) <= 1:
+        print(f'Usage: python3 {__file__} path/to/model.pth', file=stderr)
         return
     if not Path(argv[1]).exists():
         print(f'The provided path "{argv[1]}" does not exist')
-    if not Path(argv[2]).exists():
-        print(f'The provided path "{argv[2]}" does not exist')
     random.seed(0)
     np.random.seed(0)
     torch.manual_seed(0)
@@ -35,33 +54,22 @@ def main():
     model.to(device)
     model.eval()
 
-    # Load the data
-    data = np.load(argv[2])
-    loader = torch.utils.data.DataLoader(
-        FluorescenceTimeSeriesDataset(inputs=torch.from_numpy(
-            preprocess(data['fluorescence_intensities'])
-        )),
-        batch_size=450,
-        num_workers=4,
-        shuffle=False,
+    data_root_dir = Path('data')
+    save_model_guesses(
+        model,
+        device,
+        np.load(
+            data_root_dir / 'data-with-labels.npz'
+        )['fluorescence_intensities'],
+        data_root_dir / 'guesses-with-labels.npy'
     )
-
-    with torch.inference_mode():
-        label_guesses_from_model = torch.concatenate([
-            F.softmax(model(inp.to(device)), dim=1) for inp in tqdm(loader)
-        ]).cpu().numpy()
-
-    # We will compute accuracy. Since some samples have multiple labels,
-    # we will only consider the samples with single labels.
-    idx = data['labels'].sum(axis=1) == 1
-    single_label_perf = data['labels'][idx].argmax(axis=1) == np.isclose(
-        label_guesses_from_model, np.max(
-            label_guesses_from_model, axis=1
-        )[:, None]
-    ).astype(np.int8)[idx].argmax(axis=1)
-    print(
-        f'Accuracy on single labels: {single_label_perf.sum()} / '
-        f'{len(single_label_perf)} = {single_label_perf.mean():.3f}'
+    save_model_guesses(
+        model,
+        device,
+        np.load(
+            data_root_dir / 'data-without-labels.npz'
+        )['fluorescence_intensities'],
+        data_root_dir / 'guesses-without-labels.npy'
     )
 
 if __name__ == '__main__':
