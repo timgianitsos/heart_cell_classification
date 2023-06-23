@@ -12,7 +12,10 @@ import torch.nn.functional as F
 import torchvision.utils as vutils
 
 class BaseLogger(object):
-    def __init__(self, args, dataset_len):
+    def __init__(self, args, dataset_len, multiprocess_id):
+        self.multiprocess_id = multiprocess_id
+        if self.multiprocess_id != 0:
+            return
 
         self.name = args._derived['full_name']
         self.save_dir = args._derived.get('save_dir_current', None)
@@ -75,8 +78,8 @@ class BaseLogger(object):
 class TrainLogger(BaseLogger):
     """Class for logging training info to the console and saving model parameters to disk."""
 
-    def __init__(self, args, dataset_len, phase=None):
-        super(TrainLogger, self).__init__(args, dataset_len)
+    def __init__(self, args, dataset_len, multiprocess_id, phase=None):
+        super().__init__(args, dataset_len, multiprocess_id)
        
         # Tag suffix used for indicating training phase in loss + viz
         self.tag_suffix = phase
@@ -90,7 +93,8 @@ class TrainLogger(BaseLogger):
 
     def log_hparams(self, args):
         """Log all the hyper parameters in tensorboard"""
-
+        if self.multiprocess_id != 0:
+            return
         hparams = {}
         args_dict = vars(args)
         for key in args_dict:
@@ -100,10 +104,13 @@ class TrainLogger(BaseLogger):
 
     def start_iter(self):
         """Log info for start of an iteration."""
-        pass
+        if self.multiprocess_id != 0:
+            return
 
     # TODO function takes too many arguments
     def log_iter(self, batch_size, train_loss, model, dev_loader, args):
+        if self.multiprocess_id != 0:
+            return
         train_loss = train_loss.item()
         self.train_loss_meter.add(train_loss, batch_size)
         message = (
@@ -146,17 +153,23 @@ class TrainLogger(BaseLogger):
 
     def end_iter(self):
         """Log info for end of an iteration."""
+        if self.multiprocess_id != 0:
+            return
         self.iter += 1
         self.global_step += 1
 
     def start_epoch(self):
         """Log info for start of an epoch."""
+        if self.multiprocess_id != 0:
+            return
         self.epoch_start_time = time()
         self.iter = 0
         self.write(f'[start of epoch {self.epoch}]')
 
     def end_epoch(self):
         """Log info for end of an epoch."""
+        if self.multiprocess_id != 0:
+            return
         epoch_time = time() - self.epoch_start_time
         self.write(f'[end of epoch {self.epoch}, epoch time: {epoch_time:.2g} seconds]')
         self.epoch += 1

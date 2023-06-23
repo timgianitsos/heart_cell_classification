@@ -19,7 +19,7 @@ class ArgParser:
         self.parser.add_argument('--seed', type=int, default=0, help='Random seed for reproducible outputs.')
 
         # System configurations
-        self.parser.add_argument('--gpu_ids', type=str, default='0' if torch.cuda.is_available() else '-1', help='Comma-separated list of GPU IDs. Use -1 for CPU.')
+        self.parser.add_argument('--gpu_ids', type=str, default='0,1' if torch.cuda.is_available() else '-1', help='Comma-separated list of GPU IDs. Use -1 for CPU.')
         self.parser.add_argument('--num_workers', default=4, type=int, help='Number of threads for the DataLoader.')
         self.parser.add_argument('--dataset_root', type=str, default=join(dirname(argv[0]), 'data'), help='The root of the dataset directory')
 
@@ -95,9 +95,6 @@ class ArgParser:
             args._derived['devices'] = ['cpu']
         else:
             args._derived['devices'] = [f'cuda:{i}' for i in gpu_ids]
-            # Set default GPU id for `tensor.to('cuda')`
-            # (the default is normally `0`)
-            torch.cuda.set_device(args._derived['devices'][0])
 
         # Save args to a JSON file
         if args.save_dir_root:
