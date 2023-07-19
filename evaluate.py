@@ -61,7 +61,7 @@ def main():
         np.load(
             data_root_dir / 'data-with-labels.npz'
         )['fluorescence_intensities'],
-        data_root_dir / 'guesses-with-labels.npy'
+        data_root_dir / 'model-guesses-with-labels.npy'
     )
     save_model_guesses(
         model,
@@ -69,7 +69,7 @@ def main():
         np.load(
             data_root_dir / 'data-without-labels.npz'
         )['fluorescence_intensities'],
-        data_root_dir / 'guesses-without-labels.npy'
+        data_root_dir / 'model-guesses-without-labels.npy'
     )
 
 if __name__ == '__main__':
