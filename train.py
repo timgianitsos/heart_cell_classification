@@ -21,10 +21,9 @@ def main():
     model.train()
     if args._derived['devices'][0] != 'cpu':
         model = nn.DataParallel(
-            # TODO consider using DistributedDataParallel in the future
             model,
             device_ids=args._derived['devices'],
-            output_device=args._derived['devices'][0] # TODO read more about this parameter
+            output_device=args._derived['devices'][0]
         )
 
     # TODO allow for loading optimizer from checkpoint
